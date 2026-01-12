@@ -88,6 +88,19 @@ This is the same paragraph on a new line
             ],
         )
 
+    def test_block_to_block_type(self):
+        self.assertEqual(block_to_block_type("```\ni am the storm that is approching\n```"), BlockType.CODE)
+        self.assertEqual(block_to_block_type("> i am the storm that is approching"), BlockType.QUOTE)
+        self.assertEqual(block_to_block_type(">i am the storm that is approching"), BlockType.PARAGRAPH)
+        self.assertEqual(block_to_block_type("########## i am the storm that is approching"), BlockType.PARAGRAPH)
+        self.assertEqual(block_to_block_type("```i am the storm that is approching```"), BlockType.PARAGRAPH)
+        self.assertEqual(block_to_block_type("#####i am the storm that is approching"), BlockType.PARAGRAPH)
+        self.assertEqual(block_to_block_type("###### i am the storm that is approching"), BlockType.HEADING)
+        self.assertEqual(block_to_block_type("-i am the storm that is approching"), BlockType.PARAGRAPH)
+        self.assertEqual(block_to_block_type("1.i am the storm that is approching"), BlockType.PARAGRAPH)
+        self.assertEqual(block_to_block_type("1 i am the storm that is approching"), BlockType.PARAGRAPH)
+        self.assertEqual(block_to_block_type("1111. i am the storm that is approching"), BlockType.ORDERED_LIST)
+        self.assertEqual(block_to_block_type("- i am the storm that is approching"), BlockType.UNORDERED_LIST)
 
 if __name__ == "__main__":
     unittest.main()
