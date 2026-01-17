@@ -108,9 +108,9 @@ class BlockType(Enum):
     ORDERED_LIST = "ordered list"
 
 def block_to_block_type(block):
-    if re.match(r"^(\#{6} ).*", block):
+    if re.match(r"^(\#{1,6} ).*", block):
         return BlockType.HEADING
-    if re.match(r"^(\`\`\`\n)(.*\n)(\`\`\`)", block):
+    if re.match(r"^```\n.*\n\s*```$", block, re.DOTALL):
         return BlockType.CODE
     if re.match(r"^(\> ).*", block):
         return BlockType.QUOTE
@@ -119,3 +119,65 @@ def block_to_block_type(block):
     if re.match(r"^(\d*\. ).*", block):
         return BlockType.ORDERED_LIST
     return BlockType.PARAGRAPH
+
+def markdown_to_html_node(markdown):
+    blocks = markdown_to_blocks(markdown)
+    htmls = []
+    for block in blocks:
+        if block == "":
+            continue
+        type = block_to_block_type(block)
+        if type == BlockType.CODE:
+            block = block.split("```")
+            block_lines = block[1].split("\n")
+            text = ""
+            for line in block_lines:
+                if line.strip() != "":
+                    text += line.strip() + "\n"
+            htmls.append(ParentNode(tag="pre", children=[LeafNode(tag="code", value=text)]))
+        elif type == BlockType.QUOTE:
+            block_lines = block.split("\n")
+            lines = []
+            for line in block_lines:
+                lines.append(line.strip("> "))
+            text = " ".join(lines)
+            htmls.append(ParentNode(tag="blockquote", children=text_to_children(text)))
+        elif type == BlockType.PARAGRAPH:
+            block_lines = block.split("\n")
+            text = " ".join(block_lines)
+            htmls.append(ParentNode(tag="p", children=text_to_children(text)))
+        elif type == BlockType.ORDERED_LIST:
+            htmls.append(ParentNode(tag="ol", children=text_to_list_line_nodes(block)))
+        elif type == BlockType.UNORDERED_LIST:
+            htmls.append(ParentNode(tag="ul", children=text_to_list_line_nodes(block)))
+        elif type == BlockType.HEADING:
+            n = 0
+            for i in block:
+                if i == "#":
+                    n += 1
+                else:
+                    break
+            text = block[n+1:].lstrip()
+            htmls.append(ParentNode(tag=f"h{n}", children=text_to_children(text)))
+    return ParentNode(tag="div", children=htmls)
+
+def text_to_children(text):
+    text_nodes = text_to_textnodes(text)
+    html_nodes = []
+    for text_node in text_nodes:
+        html_nodes.append(text_node_to_html_node(text_node))
+    return html_nodes
+
+def text_to_list_line_nodes(text):
+    bad_lines = text.split("\n")
+    lines = []
+    for line in bad_lines:
+        parts = line.split(" ", 1)
+        lines.append(parts[1])
+    return lines_to_nodes(lines)
+    
+def lines_to_nodes(lines):
+    line_nodes = []
+    for line in lines:
+        line_nodes.append(ParentNode(tag="li", children=text_to_children(line)))
+    return line_nodes
