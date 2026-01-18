@@ -124,7 +124,7 @@ def markdown_to_html_node(markdown):
     blocks = markdown_to_blocks(markdown)
     htmls = []
     for block in blocks:
-        if block == "":
+        if block.strip() == "":
             continue
         type = block_to_block_type(block)
         if type == BlockType.CODE:
@@ -139,7 +139,8 @@ def markdown_to_html_node(markdown):
             block_lines = block.split("\n")
             lines = []
             for line in block_lines:
-                lines.append(line.strip("> "))
+                if line.strip("> ") != "":
+                    lines.append(line.strip("> "))
             text = " ".join(lines)
             htmls.append(ParentNode(tag="blockquote", children=text_to_children(text)))
         elif type == BlockType.PARAGRAPH:
@@ -165,7 +166,8 @@ def text_to_children(text):
     text_nodes = text_to_textnodes(text)
     html_nodes = []
     for text_node in text_nodes:
-        html_nodes.append(text_node_to_html_node(text_node))
+        if text_node.text is not None:
+            html_nodes.append(text_node_to_html_node(text_node))
     return html_nodes
 
 def text_to_list_line_nodes(text):
@@ -181,3 +183,4 @@ def lines_to_nodes(lines):
     for line in lines:
         line_nodes.append(ParentNode(tag="li", children=text_to_children(line)))
     return line_nodes
+
